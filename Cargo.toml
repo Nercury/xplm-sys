@@ -1,6 +1,6 @@
 [package]
 name = "xplm-sys"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Sam Crow <samcrow@uw.edu>"]
 description = "Low-level bindings for the X-Plane plugin SDK"
 repository = "https://github.com/samcrow/xplm-sys"
@@ -12,7 +12,7 @@ license = "MIT/Apache-2.0"
 build = "build.rs"
 
 [build-dependencies]
-bindgen = "^0.30.0"
+bindgen = "0.49"
 
 [features]
 # Enables SDK 2.0 features
@@ -21,3 +21,5 @@ xplm200 = []
 xplm210 = []
 # Enables SDK 3.0 features
 xplm300 = []
+# Enables SDK 3.0.1 features
+xplm301 = []

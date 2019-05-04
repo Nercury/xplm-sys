@@ -12,6 +12,9 @@ fn main() {
 fn generate_bindings() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let builder = configure_bindings();
+
+    println!("cargo:rerun-if-changed=build.rs");
+
     builder.generate().unwrap()
         .write_to_file(Path::new(&out_dir).join("bindgen.rs"))
         .unwrap();
@@ -29,6 +32,11 @@ fn configure_bindings() -> bindgen::Builder {
         .clang_arg("-ISDK/CHeaders/XPLM")
         .clang_arg("-ISDK/CHeaders/Widgets")
         .clang_args(sdk_version.args())
+        .blacklist_type("IMAGE_TLS_DIRECTORY64")
+        .blacklist_type("_IMAGE_TLS_DIRECTORY64")
+        .blacklist_type("PIMAGE_TLS_DIRECTORY64")
+        .blacklist_type("IMAGE_TLS_DIRECTORY")
+        .blacklist_type("PIMAGE_TLS_DIRECTORY")
         // Add headers
         .header("src/combined.h")
         // Tests can't run because the XPLM stub library is not found
@@ -36,6 +44,7 @@ fn configure_bindings() -> bindgen::Builder {
         // Interpret all XPLM enum as constants
         // (like the headers)
         .constified_enum("*")
+        .derive_debug(false)
 }
 
 /// Returns true if a feature with a provided name is enabled in the current build.
@@ -100,23 +109,27 @@ enum SdkVersion {
     Sdk200,
     Sdk210,
     Sdk300,
+    Sdk301,
 }
 
 static SDK100_ARGS: [&str; 0] = [];
 static SDK200_ARGS: [&str; 1] = ["-DXPLM200"];
 static SDK210_ARGS: [&str; 2] = ["-DXPLM200", "-DXPLM210"];
 static SDK300_ARGS: [&str; 3] = ["-DXPLM200", "-DXPLM210", "-DXPLM300"];
+static SDK301_ARGS: [&str; 4] = ["-DXPLM200", "-DXPLM210", "-DXPLM300", "-DXPLM301"];
 
 impl SdkVersion {
     pub fn get() -> Result<SdkVersion, SdkVersionError> {
         let feature_xplm200 = feature_enabled("xplm200")?;
         let feature_xplm210 = feature_enabled("xplm210")?;
         let feature_xplm300 = feature_enabled("xplm300")?;
-        match (feature_xplm200, feature_xplm210, feature_xplm300) {
-            (false, false, false) => Ok(SdkVersion::Sdk100),
-            (true, false, false) => Ok(SdkVersion::Sdk200),
-            (false, true, false) => Ok(SdkVersion::Sdk210),
-            (false, false, true) => Ok(SdkVersion::Sdk300),
+        let feature_xplm301 = feature_enabled("xplm301")?;
+        match (feature_xplm200, feature_xplm210, feature_xplm300, feature_xplm301) {
+            (false, false, false, false) => Ok(SdkVersion::Sdk100),
+            (true, false, false, false) => Ok(SdkVersion::Sdk200),
+            (false, true, false, false) => Ok(SdkVersion::Sdk210),
+            (false, false, true, false) => Ok(SdkVersion::Sdk300),
+            (false, false, false, true) => Ok(SdkVersion::Sdk301),
             _ => Err(SdkVersionError::Feature("Only one of the xplm200, xplm210, or xplm300 features may be enabled"))
         }
     }
@@ -128,6 +141,7 @@ impl SdkVersion {
             SdkVersion::Sdk200 => &SDK200_ARGS,
             SdkVersion::Sdk210 => &SDK210_ARGS,
             SdkVersion::Sdk300 => &SDK300_ARGS,
+            SdkVersion::Sdk301 => &SDK301_ARGS,
         }
     }
 }
