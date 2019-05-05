@@ -5,22 +5,22 @@ use std::env::VarError;
 use std::path::Path;
 
 fn main() {
-    generate_bindings();
+//    generate_bindings();
     link_libraries();
 }
 
-fn generate_bindings() {
+pub fn generate_bindings() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let builder = configure_bindings();
 
-    println!("cargo:rerun-if-changed=build.rs");
+//    println!("cargo:rerun-if-changed=build.rs");
 
     builder.generate().unwrap()
         .write_to_file(Path::new(&out_dir).join("bindgen.rs"))
         .unwrap();
 }
 
-fn configure_bindings() -> bindgen::Builder {
+pub fn configure_bindings() -> bindgen::Builder {
     let os_name = get_os_str();
     let sdk_version = SdkVersion::get().unwrap_or_else(|e| {
         panic!("SDK version problem: {}", e);
@@ -104,7 +104,7 @@ fn link_libraries() {
     }
 }
 
-enum SdkVersion {
+pub enum SdkVersion {
     Sdk100,
     Sdk200,
     Sdk210,
@@ -147,7 +147,7 @@ impl SdkVersion {
 }
 
 #[derive(Debug)]
-enum SdkVersionError {
+pub enum SdkVersionError {
     Var(VarError),
     Feature(&'static str),
 }
@@ -162,16 +162,16 @@ impl std::fmt::Display for SdkVersionError {
 }
 
 impl std::error::Error for SdkVersionError {
-    fn cause(&self) -> Option<&std::error::Error> {
-        match *self {
-            SdkVersionError::Var(ref inner) => Some(inner),
-            SdkVersionError::Feature(_) => None,
-        }
-    }
     fn description(&self) -> &str {
         match *self {
             SdkVersionError::Var(ref inner) => inner.description(),
             SdkVersionError::Feature(message) => message,
+        }
+    }
+    fn cause(&self) -> Option<&std::error::Error> {
+        match *self {
+            SdkVersionError::Var(ref inner) => Some(inner),
+            SdkVersionError::Feature(_) => None,
         }
     }
 }
